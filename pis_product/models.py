@@ -172,6 +172,8 @@ class Mark(models.Model):
         return self.name
 
 class Product(models.Model):
+    location= models.CharField(max_length=100, default=None, null=True, blank=True)
+    refunity= models.CharField(max_length=100, default=None, null=True, blank=True)
     category=models.ForeignKey(Category, on_delete=models.CASCADE, default=None)
     name = models.CharField(max_length=5000)
     ref = models.CharField(max_length=5000, default=None, null=True, blank=True)
@@ -213,11 +215,11 @@ class Product(models.Model):
         originref=self.ref.split()[0]
         return Product.objects.exclude(id=self.id).filter(category=self.category).filter(ref__startswith=originref).exclude(stock=0)
     def stockvalue(self):
-        return round(self.pondire*self.stock, 2)
-    # def getprices(self):
-    #     prices=json.loads(self.prices)
-    #     filtered_prices = [item for item in prices[1:] if float(item[1]) != 0]
-    #     return filtered_prices
+        return round(self.pr_achat*self.stock, 2)
+    def getprices(self):
+        prices=json.loads(self.prices)
+        #filtered_prices = [item for item in prices if float(item[3]) != 0]
+        return prices
     
 
 class Productscommand(models.Model):
@@ -339,7 +341,7 @@ class PurchasedProduct(DatedModel):
     )
     discount_percentage = models.FloatField(default=0.00, blank=True, null=True
     )
-    purchase_amount = models.FloatField(default=0.00, blank=True, null=True
+    total = models.FloatField(default=0.00, blank=True, null=True
     )
 
 

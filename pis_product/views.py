@@ -31,6 +31,7 @@ import barcode
 from barcode.writer import ImageWriter
 from io import BytesIO
 import base64
+import qrcode
 this_year = datetime.now().year
 this_month = datetime.now().month
 
@@ -1458,7 +1459,7 @@ def updatestock(request):
             product.prices=json.dumps(prices)
             break
     category=Category.objects.get(pk=request.POST.get('categoryid'))
-    t=PurchasedProduct.objects.create(product_id=product.id, quantity=qty, purchase_amount=amount)
+    t=PurchasedProduct.objects.create(product_id=product.id, quantity=qty, total=amount)
     StockOut.objects.create(purchased_item_id=t.id, stock_out_quantity=qty, product_id=product.id)
     product.stock=float(product.stock)-float(qty)
     product.save()
@@ -1702,6 +1703,7 @@ def addoneproductinbase(request):
     # get data from formData sent from the ajax request
     
     mark = request.POST.get('markinadd')
+    location = request.POST.get('locationinadd')
     
     #price = request.POST.get('price')
     car=request.POST.get('carinadd').strip()
@@ -1720,6 +1722,7 @@ def addoneproductinbase(request):
         price=0,
         car=car,
         ref=ref,
+        location=location,
         mark_id=mark,
     )
     
@@ -1782,6 +1785,7 @@ def updateproduct(request, id):
         ref = request.POST.get('updateref').lower().strip()
         # name = request.POST.get('name')
         car = request.POST.get('updatecar')
+        location = request.POST.get('updatelocation')
         minstock = request.POST.get('updateminstock')
         price = request.POST.get('updatepricemag')
         pricevente = request.POST.get('updatepricegro')
@@ -1808,6 +1812,7 @@ def updateproduct(request, id):
             product.prvente=pricevente
             product.price=price
             product.car=car
+            product.location=location
             product.minstock=minstock
             product.mark=mark
             product.category=category
@@ -1930,7 +1935,7 @@ def producthistory(request, id):
     }
 
     if stockout:
-        totalamountout=stockout.aggregate(Sum('purchase_amount')).get('purchase_amount__sum')
+        totalamountout=stockout.aggregate(Sum('total')).get('total__sum')
         ctx.update({
             'stockout':allouts,
             'totalamountout':round(totalamountout, 2),
@@ -1992,13 +1997,13 @@ def reportnetprofit(request):
     # month=request.POST.get('month')
     sales=round(PurchasedProduct.objects.filter(product__pr_achat__gt=0, isavoirsupp=False, invoice__datebon__range=[datefrom, dateto]
         ).aggregate(
-        total_revenue=Sum('purchase_amount')
+        total_revenue=Sum('total')
     )['total_revenue'] or 0, 2)
     avoircl=round(Avoir.objects.filter(dateavoir__range=[datefrom, dateto]
         ).aggregate(
         total=Sum('grand_total')
     )['total'] or 0, 2)
-    achats=round(StockIn.objects.filter(dated_order__range=[datefrom, dateto]
+    achats=round(Itemsbysupplier.objects.filter(bondate__range=[datefrom, dateto]
         ).aggregate(
             total_cost=Sum(('total'))
         )['total_cost'] or 0, 2)
@@ -2079,10 +2084,10 @@ def productsranking(request):
         ).values('product')
     .annotate(
         total_quantity=Sum('quantity'),
-        total_purchase_amount=Sum('purchase_amount')
+        total_total=Sum('total')
     )
     .order_by('-total_quantity')
-    .values('product__ref', 'total_quantity', 'total_purchase_amount')[:10]
+    .values('product__ref', 'total_quantity', 'total_total')[:10]
     )
     print('>>>products', products)
     # if month:products = (
@@ -2091,10 +2096,10 @@ def productsranking(request):
     #     ).values('product')
     # .annotate(
     #     total_quantity=Sum('quantity'),
-    #     total_purchase_amount=Sum('purchase_amount')
+    #     total_total=Sum('total')
     # )
     # .order_by('-total_quantity')
-    # .values('product__ref', 'total_quantity', 'total_purchase_amount')[:10]
+    # .values('product__ref', 'total_quantity', 'total_total')[:10]
     # )
     # else:
     #     products = (
@@ -2103,10 +2108,10 @@ def productsranking(request):
     #     ).values('product')
     # .annotate(
     #     total_quantity=Sum('quantity'),
-    #     total_purchase_amount=Sum('purchase_amount')
+    #     total_total=Sum('total')
     # )
     # .order_by('-total_quantity')
-    # .values('product__ref', 'product__category__name', 'total_quantity', 'total_purchase_amount')[:10]
+    # .values('product__ref', 'product__category__name', 'total_quantity', 'total_total')[:10]
     # )
     return JsonResponse({
         'data':render(request, 'products/productsranking.html', {'products':products}).content.decode('utf-8')
@@ -2129,10 +2134,10 @@ def downranking(request):
         ).values('product')
     .annotate(
         total_quantity=Sum('quantity'),
-        total_purchase_amount=Sum('purchase_amount')
+        total_total=Sum('total')
     )
     .order_by('total_quantity')
-    .values('product__name', 'total_quantity', 'total_purchase_amount')[:10]
+    .values('product__name', 'total_quantity', 'total_total')[:10]
     )
 
     else:
@@ -2142,10 +2147,10 @@ def downranking(request):
         ).values('product')
     .annotate(
         total_quantity=Sum('quantity'),
-        total_purchase_amount=Sum('purchase_amount')
+        total_total=Sum('total')
     )
     .order_by('total_quantity')
-    .values('product__name', 'total_quantity', 'total_purchase_amount')[:10]
+    .values('product__name', 'total_quantity', 'total_total')[:10]
     )
 
     return JsonResponse({
@@ -2178,7 +2183,7 @@ def statsofrelve(request):
             total_cost = round(float(product.pr_achat) * float(totalitems), 2)
             total_profit = PurchasedProduct.objects.filter(
                 product=product, created_at__year=year, created_at__month=month
-            ).aggregate(Sum('purchase_amount'))['purchase_amount__sum'] or 0
+            ).aggregate(Sum('total'))['total__sum'] or 0
 
             # Calculate the net profit for the product
             net_profit = round(float(total_profit) - float(total_cost), 2)
@@ -2206,7 +2211,7 @@ def statsofrelve(request):
             total_cost = round(float(product.pr_achat) * float(totalitems), 2)
             total_profit = PurchasedProduct.objects.filter(
                 product=product, created_at__year=year
-            ).aggregate(Sum('purchase_amount'))['purchase_amount__sum'] or 0
+            ).aggregate(Sum('total'))['total__sum'] or 0
 
             # Calculate the net profit for the product
             net_profit = round(float(total_profit) - float(total_cost), 2)
@@ -2247,7 +2252,7 @@ def dailystatsstock(request):
         total_cost = round(float(product.pr_achat) * float(totalitems), 2)
         total_profit = PurchasedProduct.objects.filter(
             product=product, created_at__date=date
-        ).aggregate(Sum('purchase_amount'))['purchase_amount__sum'] or 0
+        ).aggregate(Sum('total'))['total__sum'] or 0
 
         # Calculate the net profit for the product
         net_profit = round(float(total_profit) - float(total_cost), 2)
@@ -2752,10 +2757,10 @@ def dailyproductsranking(request):
         ).values('product')
     .annotate(
         total_quantity=Sum('quantity'),
-        total_purchase_amount=Sum('purchase_amount')
+        total_total=Sum('total')
     )
     .order_by('-total_quantity')
-    .values('product__ref', 'product__category__name', 'total_quantity', 'total_purchase_amount')
+    .values('product__ref', 'product__category__name', 'total_quantity', 'total_total')
     )
     return JsonResponse({
         'data':render(request, 'products/productsranking.html', {'products':products}).content.decode('utf-8')
@@ -2770,10 +2775,10 @@ def dailyproductsrankingdown(request):
         ).values('product')
     .annotate(
         total_quantity=Sum('quantity'),
-        total_purchase_amount=Sum('purchase_amount')
+        total_total=Sum('total')
     )
     .order_by('-total_quantity')
-    .values('product__name', 'total_quantity', 'total_purchase_amount')
+    .values('product__name', 'total_quantity', 'total_total')
     )
     return JsonResponse({
         'data':render(request, 'products/productsranking.html', {'products':products}).content.decode('utf-8')
@@ -3308,7 +3313,7 @@ def sortiecomptoir(request):
                 product=product,
                 quantity=item.get('qty'),
                 price=item.get('price'),
-                purchase_amount=item.get('total'),
+                total=item.get('total'),
                 invoice=invoice
 
 
@@ -3555,7 +3560,7 @@ def modifierboncomptoir(request, id):
                 product=product,
                 quantity=item.get('qty'),
                 price=item.get('price'),
-                purchase_amount=item.get('total'),
+                total=item.get('total'),
                 invoice=bon
             )
     ctx={
@@ -4103,7 +4108,7 @@ def createfacturemanual(request):
                     'quantity': item.get('qty'),
                     'price': item.get('price'),
                     'discount_percentage': item.get('prachat'),
-                    'purchase_amount': item.get('total'),
+                    'total': item.get('total'),
                 }
                 form = PurchasedProductForm(form_kwargs)
                 if form.is_valid():
@@ -4385,7 +4390,7 @@ def getpdctouts(request):
         by_month.append({'month': month, 'count': count})
     
     totalqty=pdctouts.aggregate(Sum('quantity'))['quantity__sum'] or 0
-    total=round(pdctouts.aggregate(Sum('purchase_amount'))['purchase_amount__sum'] or 0, 2)
+    total=round(pdctouts.aggregate(Sum('total'))['total__sum'] or 0, 2)
     # Group by client
 
     client_quantities= defaultdict(int)
@@ -4788,3 +4793,95 @@ def lowpriceachat(request):
     return JsonResponse({
         'price':products.price
     })
+
+def outprice(request):
+    qty= request.GET.get('qty')
+    # index is needed to get the xact price and out its qty
+    index= request.GET.get('index')
+    id= request.GET.get('id')
+    product=Product.objects.get(pk=id)
+    prices= json.loads(product.prices)
+    price=prices[int(index)][2]
+    total=round(float(price)*float(qty), 2)
+    # go to index
+    prices[int(index)][3] = float(prices[int(index)][3]) - float(qty)
+    product.stock=float(product.stock)-float(qty)
+    PurchasedProduct.objects.create(
+        product=product,
+        quantity=float(qty),
+        price=float(price),
+        total=total
+    )
+    product.prices=json.dumps(prices)
+    product.save()
+    return JsonResponse({
+        'success':True
+    })
+    
+def printbarcode(request):
+    products=json.loads(request.GET.get('products'))
+    supplierid=request.GET.get('supplierid')
+    suppliercode=Supplier.objects.get(pk=supplierid).name[:4].upper()
+    date=request.GET.get('date')
+    date=datetime.strptime(date, '%Y-%m-%d').strftime('%d/%m/%y')
+    barcodes = []
+    for i in products:
+        ref=i['name'].split('-')[0].strip()
+        print('>>> ref', ref)
+        name=i['name'].split('-')[1].strip()
+        remise1=0 if i['remise']=='' else float(i['remise'])
+        price=i['price']
+        # net=float(price)-(float(price)*int(remise1)/100)
+        # price=round(net*2, 2)
+        #price=str(price).replace('.', '')
+        qty=float(i['qty'])
+        # # List to hold the barcodes in base64 format
+        
+        # Generate barcodes for the specified quantity
+        thisbarcodes=[]
+        # for _ in range(int(qty)):
+        #     buffer = BytesIO()
+        #     barcode_instance = code_class(ref, writer=ImageWriter())
+        #     options = {
+        #         'write_text': False,
+        #         'dpi': 300,           # Adjust module width for precision
+        #         #'module_width': barcode_width_inches,
+        #         'module_height': 0.8,
+        #     }
+        #     barcode_instance.write(buffer, options)
+
+        #     # Convert the image to base64 and append it to the list
+        #     barcode_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+        #     thisbarcodes.append([ref, name, price, barcode_base64])
+        #     buffer.close()
+        # barcodes.append(thisbarcodes)
+        for _ in range(int(qty)):
+            buffer = BytesIO()
+            qr = qrcode.QRCode(
+                version=1,  # Controls the size of the QR code
+                error_correction=qrcode.constants.ERROR_CORRECT_L,
+                box_size=8,
+                border=0,
+            )
+            qr.add_data(ref)
+            qr.make(fit=True)
+
+            img = qr.make_image(fill='black', back_color='white')
+            img.save(buffer, format="PNG")
+            # get 2 digits of price %2
+            
+            # Convert the image to base64 and append it to the list
+            qr_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            
+            barcodes.append([ref, name, price, qr_base64, suppliercode, date])
+            #thisbarcodes.append([ref, name, f"{price:.2f}".replace('.', ''), qr_base64, supplierid, date])
+            buffer.close()
+        #barcodes.append(thisbarcodes)
+        # if achat means the request is coming from bon achat, date will be today
+    barcodes=[barcodes[i:i+65] for i in range(0, len(barcodes), 65)]
+    
+    
+    return render(request, 'products/barcode.html', {
+        'barcodes': barcodes,
+    })
+

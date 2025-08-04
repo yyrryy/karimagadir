@@ -4,10 +4,10 @@
 {% block content %}
 
 
-<div class="table-responsive row">
+<div class="table-responsive row mt-2">
 
     <!-- products -->
-    <div class="col-md-9 position-relative">
+    <div class="col-9 position-relative">
         <div class="bg-white shadow rounded p-2">
             <div class="loadertable d-none d-flex justify-content-center align-items-center" style="
             position: absolute;
@@ -50,14 +50,14 @@
         </div>
     </div>
 
-    <div class="col-md-3">
+    <div class="col-3">
 
-        <div class="bg-white shadow rounded p-2 position-fixed">
-            <input type="text" class="form-control searchref mb-5" placeholder="Chercher REF ZERO stock">
-            <ul id="compositions-list" class="pure-tree main-tree" style="
-    height: 67vh;
-    overflow-y: scroll;
-">
+        <input type="text" class="form-control searchref mb-5" placeholder="Chercher REF ZERO stock">
+        <div class="bg-white shadow rounded p-2">
+            <ul id="compositions-list" class="" style="
+                height: 67vh;
+                overflow-y: scroll;
+            ">
                 <input type="text" class="form-control searchcategories sticky-top" placeholder="Chercher les categories">
                 <div class="searchresults">
 
@@ -65,7 +65,7 @@
                     {% for i in categories %}
                     <li class="pure-tree_link">
 
-                        <a href="#" class="categoriesbtn  d-flex justify-content-between" data-catgoryid="{{i.id}}">
+                        <a href="#" class="categoriesbtn p-2 d-flex justify-content-between" data-catgoryid="{{i.id}}">
                             <b>
                                 {{i.name}} ({{i.total_products }})
                             </b>
@@ -159,10 +159,10 @@
     }
 
    function getlowbycategory(categoryid){
-    if ($('[name="supplier"]').val()==0){
-        alertify.error('Veuillez choisir un fournisseur')
-        return
-    }
+    // if ($('[name="supplier"]').val()==0){
+    //     alertify.error('Veuillez choisir un fournisseur')
+    //     return
+    // }
     console.log($('[name="supplier"]').val())
     $('.loadertable').removeClass('d-none')
     $.ajax({
@@ -194,10 +194,10 @@
         let cards = document.querySelectorAll('.pure-tree_link')
         $('.searchref').on('change', ()=>{
             // ajax call to searchrefinlow
-            if ($('[name="supplier"]').val()==0){
-                alertify.error('Veuillez choisir un fournisseur')
-                return
-            }
+            // if ($('[name="supplier"]').val()==0){
+            //     alertify.error('Veuillez choisir un fournisseur')
+            //     return
+            // }
             let ref=$('.searchref').val()
             if(ref==''){
                 return

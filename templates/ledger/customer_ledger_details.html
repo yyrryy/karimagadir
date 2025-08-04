@@ -74,6 +74,18 @@
                     <th>Rest FC</th>
                     <th>{{soldfc}} DH</th>
                 </tr>
+                <tr>
+                    <th>Fournisseur</th>
+                    <th>
+                      {% if customer.supplier %}
+                      {{customer.supplier}}
+                      {% else %}
+                      <select class="supplierslist w-100" onchange="setsupplier(event)">
+
+                      </select>
+                      {%endif%}
+                    </th>
+                </tr>
                 
             </table>
             
