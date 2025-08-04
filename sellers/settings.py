@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'sellers.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
-testing=os.environ.get("DEBUG")
+testing=True
 if testing:
     DATABASES = {
         'default': {
