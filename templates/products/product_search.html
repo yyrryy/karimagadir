@@ -5,7 +5,8 @@
  <tr class="pdct-row" pdctid="{{item.id}}">
     <td class="productref">
         <b>
-            {{item.ref.upper}}
+            {{item.ref.upper}} <br>
+            {{item.refunity.upper}}
         </b>
     </td>
     <td class="pdct">
@@ -33,11 +34,16 @@
     <td class="product_stock" style="background: {%if item.stock == 0%}red{%elif item.stock < 0%}#0d6efd59{%elif item.stock <= item.minstock%} yellow {%else%}yellowgreen{%endif%}; color:black;">
         <b>
             {{item.stock|floatformat:-2}}
-        </b>
+        </b><br>
+        {% for i in item.getsimillars %}
+        {% if i.stock > 0 %}
+        {{i.mark.name.upper}}({{i.stock}}) <br>
+        {% endif %}
+        {% endfor %}
     </td>
     <td hidden class="pondire" suppid="{{item.originsupp.id}}">
       <b>
-        {{ item.pondire }}
+        {{ item.originsupp }}
       </b>
     </td>
     <td hidden class="minstock">
@@ -72,7 +78,8 @@
                 
                 {% endfor %}
         
-            
+        {% else %}
+        DP: {{item.pr_achat}}=>{{item.originsupp}}    
             
         {% endif %}
         <!-- {{item.pr_achat}} -->
@@ -108,8 +115,17 @@
             
         </button>
         <a  href="{% url 'product:producthistory' id=item.id %}"><button class="btn btn-danger btn-xs fa fa-history" title="Historique"></button></a>
-            
-            
+        <button class="btn btn-success fa fa-copy" onclick="$('.copydiv{{item.id}}').toggleClass('d-none')"></button>
+        <div class="copydiv{{item.id}} d-none">
+            <select name="" id="" class="select2 form-control mark">
+                <option value="">Marque</option>
+                {% for i in marks %}
+                <option value="{{i.id}}">{{i.name.upper}}</option>
+                {% endfor %}
+            </select>
+            <input type="text" placeholder="REFERENCE" class="form-control ref">
+            <button class="btn btn-info w-100" onclick="createcopy(event, '{{item.id}}')">Valider</button>
+        </div>
     </td>
     <!--{% if not home %}
     {% endif %}

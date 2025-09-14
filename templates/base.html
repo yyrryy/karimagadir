@@ -505,7 +505,7 @@ table{
             </div>
             <div class="d-flex">
               
-              <button class="border shadow me-2 btn fa fa-search text-primary" onclick="$('.searchpage').toggleClass('d-none');$('.searchglobal').focus()">
+              <!-- <button class="border shadow me-2 btn fa fa-search text-primary" onclick="$('.searchpage').toggleClass('d-none');$('.searchglobal').focus()"> -->
 
               </button>
               {% if not request.user.retailer_user.role_type == 'pos'%}
@@ -1808,12 +1808,14 @@ let inactivityTime=0;
   }
   function checkpassword(event){
     var password=$(event.target).val()
-    if (password=='adashi'){
-      $('.passwordscreen').addClass('d-none')
-      checkForInactivity(120)
-      console.log('set inactivity')
-      localStorage.setItem('inactive', '0')
-    }
+    $.get('/product/checkpassword', (data)=>{
+      if (password==data.password){
+        $('.passwordscreen').addClass('d-none')
+        checkForInactivity(120)
+        console.log('set inactivity')
+        localStorage.setItem('inactive', '0')
+      }
+    })
   }
 
 

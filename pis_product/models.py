@@ -41,6 +41,7 @@ class Supplier(models.Model):
     website = models.CharField(max_length=100, default=None, null=True, blank=True)
     total= models.DecimalField(max_digits=65, decimal_places=2, default=0.00)
     rest= models.DecimalField(max_digits=65, decimal_places=2, default=0.00)
+    plafon=models.FloatField(default=0.00)
     client=models.ForeignKey(Customer, related_name="clientofsupplier", on_delete=models.CASCADE, default=None, blank=True, null=True)
     def __str__(self) -> str:
         return self.name
@@ -213,7 +214,7 @@ class Product(models.Model):
     
     def getsimillars(self):
         originref=self.ref.split()[0]
-        return Product.objects.exclude(id=self.id).filter(category=self.category).filter(ref__startswith=originref).exclude(stock=0)
+        return Product.objects.exclude(id=self.id).filter(category=self.category).filter(refunity=self.refunity).exclude(stock=0)
     def stockvalue(self):
         return round(self.pr_achat*self.stock, 2)
     def getprices(self):

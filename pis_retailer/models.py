@@ -14,6 +14,7 @@ class Retailer(DatedModel):
     #if identification fiscal
     id_fiscal = models.CharField(max_length=200, null=True, blank=True)
     cnss = models.CharField(max_length=200, null=True, blank=True)
+    password = models.CharField(max_length=200, null=True, blank=True)
     phone = models.CharField(max_length=200, null=True, blank=True)
     #patent
     pt = models.CharField(max_length=200, null=True, blank=True)

@@ -1369,7 +1369,9 @@ def searchglobal(request):
     q_objects = Q()
     for term in search_terms:
         if term:
-            q_objects &= (Q(ref__iregex=term) | Q(car__iregex=term)| Q(category__name__iregex=term)| Q(mark__name__iregex=term))
+            q_objects &= (Q(refunity__iregex=term) | Q
+            (ref__iregex=term) | Q
+            (car__iregex=term)| Q(category__name__iregex=term)| Q(mark__name__iregex=term))
 
     products = Product.objects.filter(q_objects).order_by('-stock')
 
@@ -1785,6 +1787,7 @@ def updateproduct(request, id):
         ref = request.POST.get('updateref').lower().strip()
         # name = request.POST.get('name')
         car = request.POST.get('updatecar')
+        refunity = request.POST.get('updaterefunity')
         location = request.POST.get('updatelocation')
         minstock = request.POST.get('updateminstock')
         price = request.POST.get('updatepricemag')
@@ -1809,6 +1812,7 @@ def updateproduct(request, id):
             #print('rrr',prnet)
             #product.name=name
             product.ref=ref
+            product.refunity=refunity
             product.prvente=pricevente
             product.price=price
             product.car=car
@@ -4287,6 +4291,7 @@ def adjustcompanyinfo(request):
     address=request.POST.get('address')
     phone=request.POST.get('phone')
     ice=request.POST.get('ice')
+    password=request.POST.get('password')
     id_fiscal=request.POST.get('id_fiscal')
     pt=request.POST.get('pt')
     r, created=Retailer.objects.update_or_create(
@@ -4298,6 +4303,7 @@ def adjustcompanyinfo(request):
             'ice': ice,
             'id_fiscal':id_fiscal,
             'pt':pt,
+            'password':password,
         }
     )
     if logo:
@@ -4806,6 +4812,8 @@ def outprice(request):
     # go to index
     prices[int(index)][3] = float(prices[int(index)][3]) - float(qty)
     product.stock=float(product.stock)-float(qty)
+    if float(product.stock)-float(qty)>=0:
+        product.supplier=product.originsupp
     PurchasedProduct.objects.create(
         product=product,
         quantity=float(qty),
@@ -4885,3 +4893,7 @@ def printbarcode(request):
         'barcodes': barcodes,
     })
 
+def checkpassword(request):
+    return JsonResponse({
+        'password':request.user.retailer_user.retailer.password
+    })

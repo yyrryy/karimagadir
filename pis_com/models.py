@@ -75,6 +75,7 @@ class UserProfile(models.Model):
 
 
 class Customer(models.Model):
+    plafon=models.FloatField(default=0.00)
     #from pis_product.models import Supplier
     retailer = models.ForeignKey(
         'pis_retailer.Retailer',
